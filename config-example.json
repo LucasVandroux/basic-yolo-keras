@@ -2,17 +2,17 @@
     "model" : {
         "architecture":         "Full Yolo",
         "input_size":           416,
-        "anchors":              [0.30, 0.73, 0.60, 1.92, 1.63, 4.29, 1.67, 1.15, 3.38, 9.65],
-        "max_box_per_image":    30,
-        "labels":               ["Person_sitting", "Cyclist", "person", "Van", "Truck", "Misc", "DontCare", "car", "Tram"]
+        "anchors":              [0.57273, 0.677385, 1.87446, 2.06253, 3.33843, 5.47434, 7.88282, 3.52778, 9.77052, 9.16828],
+        "max_box_per_image":    10,        
+        "labels":               ["raccoon"]
     },
 
     "train": {
-        "train_image_folder":   "/Users/lucas/Documents/Master Thesis/Kitti_Dataset/training/label_2_voc/VOC2012/JPEGImages/",
-        "train_annot_folder":   "/Users/lucas/Documents/Master Thesis/Kitti_Dataset/training/label_2_voc/VOC2012/Annotations/",
-
+        "train_image_folder":   "/home/andy/github/raccoon_dataset/images/",
+        "train_annot_folder":   "/home/andy/github/raccoon_dataset/annotations/",     
+          
         "train_times":          10,
-        "pretrained_weights":   "",
+        "pretrained_weights":   "full_yolo_raccoon.h5",
         "batch_size":           16,
         "learning_rate":        1e-4,
         "nb_epoch":             50,
@@ -23,7 +23,7 @@
         "coord_scale":          1.0,
         "class_scale":          1.0,
 
-        "saved_weights_name":   "full_yolo_kitti_test.h5",
+        "saved_weights_name":   "full_yolo_raccoon.h5",
         "debug":                true
     },
 

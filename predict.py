@@ -139,7 +139,6 @@ def _main_(args):
                 else:
                     img_export_path = path.join(image_path, img_name[:-4] + '_detected' + img_name[-4:])
 
-                print(img_export_path)
                 cv2.imwrite(img_export_path, im)
 
             # save prediction in .csv file

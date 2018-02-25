@@ -12,18 +12,18 @@
         "train_annot_folder":   "/home/dataset/kitti_voc_dataset/labels/",
 
         "train_times":          10,
-        "pretrained_weights":   "/Users/lucas/Documents/GitHub/basic-yolo-keras/trained_models/inception3_yolo_kitti_9-14epoch.h5",
+        "pretrained_weights":   "/Users/lucas/Documents/GitHub/basic-yolo-keras/trained_models/inception3_2_yolo_kitti_0-12epoch-7anchors.h5",
         "batch_size":           16,
         "learning_rate":        1e-4,
         "nb_epoch":             50,
         "warmup_epochs":        0,
 
-        "object_scale":         5.0 ,
-        "no_object_scale":      1.0,
-        "coord_scale":          1.0,
+        "object_scale":         1.0 ,
+        "no_object_scale":      0.5,
+        "coord_scale":          5.0,
         "class_scale":          1.0,
 
-        "saved_weights_name":   "inception3_yolo_kitti.h5",
+        "saved_weights_name":   "inception3_2_yolo_kitti_best.h5",
         "debug":                true
     },
 

@@ -1,0 +1,36 @@
+{
+    "model" : {
+        "architecture":         "Tiny Yolo",
+        "input_size":           416,
+        "anchors":              [0.06,0.21, 0.20,0.66, 0.37,2.92, 0.60,1.04, 1.28,2.18, 1.97,5.20, 4.13,8.64],
+        "max_box_per_image":    30,
+        "labels":               ["Person_sitting", "Cyclist", "Pedestrian", "Van", "Truck", "Misc", "DontCare", "Car", "Tram"]
+    },
+
+    "train": {
+        "train_image_folder":   "/home/dataset/kittigta_voc_dataset/images/",
+        "train_annot_folder":   "/home/dataset/kittigta_voc_dataset/labels/",
+
+        "train_times":          10,
+        "pretrained_weights":   "",
+        "batch_size":           16,
+        "learning_rate":        1e-3,
+        "nb_epoch":             50,
+        "warmup_epochs":        4,
+
+        "object_scale":         5.0 ,
+        "no_object_scale":      1.0,
+        "coord_scale":          1.0,
+        "class_scale":          1.0,
+
+        "saved_weights_name":   "tiny_yolo_kittigta_warmup.h5",
+        "debug":                false
+    },
+
+    "valid": {
+        "valid_image_folder":   "/home/dataset/kitti_voc_dataset_test/images/",
+        "valid_annot_folder":   "/home/dataset/kitti_voc_dataset_test/labels/",
+
+        "valid_times":          1
+    }
+}

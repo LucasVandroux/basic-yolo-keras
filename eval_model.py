@@ -161,5 +161,5 @@ if __name__ == '__main__':
 
     # Plot the mAP and save the file
     mAP.plot()
-    plt.show()
     plt.savefig(path_savefig)
+    plt.show()

@@ -247,9 +247,9 @@ class YOLO(object):
         dummy_array = dummy_array = np.zeros((1,1,1,1,self.max_box_per_image,4))
 
         netout = self.model.predict([input_image, dummy_array])[0]
-        boxes  = self.decode_netout(netout)
+        boxes, all_boxes  = self.decode_netout(netout)
 
-        return boxes
+        return boxes, all_boxes
 
     def bbox_iou(self, box1, box2):
         x1_min  = box1.x - box1.w/2
@@ -290,6 +290,61 @@ class YOLO(object):
         grid_h, grid_w, nb_box = netout.shape[:3]
 
         boxes = []
+        all_boxes = []
+
+        # decode the output by the network
+        netout[..., 4]  = self.sigmoid(netout[..., 4])
+        netout[..., 5:] = netout[..., 4][..., np.newaxis] * self.softmax(netout[..., 5:])
+
+        for row in range(grid_h):
+            for col in range(grid_w):
+                for b in range(nb_box):
+                    # from 4th element onwards are confidence and class classes
+                    # classes = netout[row,col,b,5:]
+                    classes = netout[row,col,b,5:] * (netout[row,col,b,5:] > obj_threshold)
+                    list_classes = netout[row,col,b,5:].tolist()
+
+                    # first 4 elements are x, y, w, and h
+                    x, y, w, h = netout[row,col,b,:4]
+
+                    x = (col + self.sigmoid(x)) / grid_w # center position, unit: image width
+                    y = (row + self.sigmoid(y)) / grid_h # center position, unit: image height
+                    w = self.anchors[2 * b + 0] * np.exp(w) / grid_w # unit: image width
+                    h = self.anchors[2 * b + 1] * np.exp(h) / grid_h # unit: image height
+                    confidence = netout[row,col,b,4]
+
+                    if np.sum(classes) > 0:
+                        box = BoundBox(x, y, w, h, confidence, classes)
+                        boxes.append(box)
+
+                    all_boxes.append([x, y, w, h, confidence] + list_classes)
+
+
+        # suppress non-maximal boxes
+        for c in range(self.nb_class):
+            sorted_indices = list(reversed(np.argsort([box.classes[c] for box in boxes])))
+
+            for i in xrange(len(sorted_indices)):
+                index_i = sorted_indices[i]
+
+                if boxes[index_i].classes[c] == 0:
+                    continue
+                else:
+                    for j in xrange(i+1, len(sorted_indices)):
+                        index_j = sorted_indices[j]
+
+                        if self.bbox_iou(boxes[index_i], boxes[index_j]) >= nms_threshold:
+                            boxes[index_j].classes[c] = 0
+
+        # remove the boxes which are less likely than a obj_threshold
+        boxes = [box for box in boxes if box.get_score() > obj_threshold]
+
+        return boxes, all_boxes
+
+    def decode_netout_old(self, netout, obj_threshold=0.3, nms_threshold=0.3):
+        grid_h, grid_w, nb_box = netout.shape[:3]
+
+        boxes = []
 
         # decode the output by the network
         netout[..., 4]  = self.sigmoid(netout[..., 4])
@@ -300,6 +355,7 @@ class YOLO(object):
             for col in range(grid_w):
                 for b in range(nb_box):
                     # from 4th element onwards are confidence and class classes
+                    # classes = netout[row,col,b,5:]
                     classes = netout[row,col,b,5:]
 
                     if np.sum(classes) > 0:

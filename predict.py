@@ -47,7 +47,7 @@ argparser.add_argument(
 
 def predict_single_image(yolo, img_path, labels):
     image = cv2.imread(img_path)
-    boxes = yolo.predict(image)
+    boxes, all_boxes = yolo.predict(image)
     image = draw_boxes(image, boxes, labels)
 
     pred_list = []
@@ -60,7 +60,7 @@ def predict_single_image(yolo, img_path, labels):
         score = box.get_score()
         pred_list.append([label, xmin, ymin, xmax, ymax, score])
 
-    return image, pred_list
+    return image, pred_list, all_boxes
 
 def _main_(args):
 
@@ -115,7 +115,7 @@ def _main_(args):
         for i in tqdm(range(nb_frames)):
             _, image = video_reader.read()
 
-            boxes = yolo.predict(image)
+            boxes, _ = yolo.predict(image)
             image = draw_boxes(image, boxes, config['model']['labels'])
 
             video_writer.write(np.uint8(image))
@@ -131,7 +131,7 @@ def _main_(args):
         for idx in trange(len(list_img)):
             img_name = list_img[idx]
             img_path = path.join(image_path, img_name)
-            im, list_labels = predict_single_image(yolo, img_path, config['model']['labels'])
+            im, list_labels, all_boxes = predict_single_image(yolo, img_path, config['model']['labels'])
 
             if save_images:
                 if args.predictionPath:
@@ -147,9 +147,16 @@ def _main_(args):
                 writer = csv.writer(csv_file, delimiter=',')
                 writer.writerows(list_labels)
 
+            # save all prediction in .csv file
+            csv_all_path = path.join(pred_path, img_name[:-4] + '_all.csv')
+            with open(csv_all_path, "w") as csv_file:
+                writer = csv.writer(csv_file, delimiter=',')
+                writer.writerows(all_boxes)
+
     elif path.exists(image_path):
         image = cv2.imread(image_path)
-        boxes = yolo.predict(image)
+        img_name = path.basename(image_path)
+        boxes, _ = yolo.predict(image)
         image = draw_boxes(image, boxes, config['model']['labels'])
 
         pred_list = []
@@ -163,14 +170,20 @@ def _main_(args):
             pred_list.append([label, xmin, ymin, xmax, ymax, score])
 
         csv_path = path.join(pred_path, img_name[:-4] + '.csv')
-        with open(pred_path, "w") as csv_file: # TODO change file name
+        with open(csv_path, "w") as csv_file: # TODO change file name
             writer = csv.writer(csv_file, delimiter=',')
             writer.writerows(pred_list)
             # pred_list.append([class_mapping[cls_num]] + b.tolist())
 
         print(len(boxes), 'boxes are found')
 
-        cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
+        if save_images:
+            if args.predictionPath:
+                img_export_path = path.join(pred_path, img_name)
+            else:
+                img_export_path = path.join(image_path, img_name[:-4] + '_detected' + img_name[-4:])
+
+            cv2.imwrite(img_export_path, image)
     else:
         print('ERROR: could not find ' + image_path)
 if __name__ == '__main__':

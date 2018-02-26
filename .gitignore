@@ -3,3 +3,4 @@ __pycache__/*
 *.pyc
 basis_weights/*
 *.h5
+.ipynb_checkpoints/*

@@ -12,6 +12,7 @@ from preprocessing import BatchGenerator
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from utils import BoundBox
 from backend import TinyYoloFeature, FullYoloFeature, MobileNetFeature, SqueezeNetFeature, Inception3Feature, VGG16Feature, ResNet50Feature
+import time
 
 class YOLO(object):
     def __init__(self, architecture,
@@ -246,10 +247,14 @@ class YOLO(object):
         input_image = np.expand_dims(input_image, 0)
         dummy_array = dummy_array = np.zeros((1,1,1,1,self.max_box_per_image,4))
 
-        netout = self.model.predict([input_image, dummy_array])[0]
-        boxes, all_boxes  = self.decode_netout(netout)
 
-        return boxes, all_boxes
+        netout = self.model.predict([input_image, dummy_array])[0]
+
+        start_prediction = time.time()
+        boxes, all_boxes  = self.decode_netout(netout)
+        time_prediction = time.time() - start_prediction
+
+        return boxes, all_boxes, time_prediction
 
     def bbox_iou(self, box1, box2):
         x1_min  = box1.x - box1.w/2

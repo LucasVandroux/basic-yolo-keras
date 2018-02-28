@@ -43,11 +43,11 @@ argparser.add_argument(
     '-s',
     '--saveImages',
     default=1,
-    help='save or not the images with the predictions (0/1)')
+    help='save or not the images with the predictions (0/[1])')
 
 def predict_single_image(yolo, img_path, labels):
     image = cv2.imread(img_path)
-    boxes, all_boxes = yolo.predict(image)
+    boxes, all_boxes, time_prediction = yolo.predict(image)
     image = draw_boxes(image, boxes, labels)
 
     pred_list = []
@@ -60,7 +60,7 @@ def predict_single_image(yolo, img_path, labels):
         score = box.get_score()
         pred_list.append([label, xmin, ymin, xmax, ymax, score])
 
-    return image, pred_list, all_boxes
+    return image, pred_list, all_boxes, time_prediction
 
 def _main_(args):
 
@@ -68,6 +68,7 @@ def _main_(args):
     weights_path = args.weights
     image_path   = args.input
     save_images  = int(args.saveImages)
+    save_nms_pred = False
 
     if not args.predictionPath:
         pred_path = path.dirname(image_path)
@@ -115,7 +116,7 @@ def _main_(args):
         for i in tqdm(range(nb_frames)):
             _, image = video_reader.read()
 
-            boxes, _ = yolo.predict(image)
+            boxes, _, _ = yolo.predict(image)
             image = draw_boxes(image, boxes, config['model']['labels'])
 
             video_writer.write(np.uint8(image))
@@ -126,12 +127,13 @@ def _main_(args):
     elif path.isdir(image_path):
         # list the pictures in the folder
         list_img = [filename for filename in os.listdir(image_path) if filename.endswith(('.png', '.jpg'))]
+        times_pred = np.zeros(len(list_img))
 
         # predict for each pictures
         for idx in trange(len(list_img)):
             img_name = list_img[idx]
             img_path = path.join(image_path, img_name)
-            im, list_labels, all_boxes = predict_single_image(yolo, img_path, config['model']['labels'])
+            im, list_labels, all_boxes, times_pred[idx] = predict_single_image(yolo, img_path, config['model']['labels'])
 
             if save_images:
                 if args.predictionPath:
@@ -142,10 +144,11 @@ def _main_(args):
                 cv2.imwrite(img_export_path, im)
 
             # save prediction in .csv file
-            csv_path = path.join(pred_path, img_name[:-4] + '.csv')
-            with open(csv_path, "w") as csv_file:
-                writer = csv.writer(csv_file, delimiter=',')
-                writer.writerows(list_labels)
+            if save_nms_pred:
+                csv_path = path.join(pred_path, img_name[:-4] + '.csv')
+                with open(csv_path, "w") as csv_file:
+                    writer = csv.writer(csv_file, delimiter=',')
+                    writer.writerows(list_labels)
 
             # save all prediction in .csv file
             csv_all_path = path.join(pred_path, img_name[:-4] + '_all.csv')
@@ -153,10 +156,12 @@ def _main_(args):
                 writer = csv.writer(csv_file, delimiter=',')
                 writer.writerows(all_boxes)
 
+        print('Average prediction time = ' + str(np.mean(times_pred)))
+
     elif path.exists(image_path):
         image = cv2.imread(image_path)
         img_name = path.basename(image_path)
-        boxes, _ = yolo.predict(image)
+        boxes, _, _ = yolo.predict(image)
         image = draw_boxes(image, boxes, config['model']['labels'])
 
         pred_list = []
@@ -168,6 +173,7 @@ def _main_(args):
             label = config['model']['labels'][box.get_label()].encode("utf-8")
             score = box.get_score()
             pred_list.append([label, xmin, ymin, xmax, ymax, score])
+
 
         csv_path = path.join(pred_path, img_name[:-4] + '.csv')
         with open(csv_path, "w") as csv_file: # TODO change file name

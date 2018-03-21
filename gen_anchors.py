@@ -19,6 +19,12 @@ argparser.add_argument(
     default=5,
     help='number of anchors to use')
 
+argparser.add_argument(
+    '-n',
+    '--name',
+    default='',
+    help='name of class to extract anchor from')
+
 def IOU(ann, centroids):
     w, h = ann
     similarities = []
@@ -103,6 +109,7 @@ def run_kmeans(ann_dims, anchor_num):
 def main(argv):
     config_path = args.conf
     num_anchors = int(args.anchors)
+    class_name  = args.name
 
     with open(config_path) as config_buffer:
         config = json.loads(config_buffer.read())
@@ -121,9 +128,10 @@ def main(argv):
         cell_h = image['height']/grid_h
 
         for obj in image['object']:
-            relative_w = (float(obj['xmax']) - float(obj['xmin']))/cell_w
-            relatice_h = (float(obj["ymax"]) - float(obj['ymin']))/cell_h
-            annotation_dims.append(map(float, (relative_w,relatice_h)))
+            if obj['name'] == class_name or not class_name:
+                relative_w = (float(obj['xmax']) - float(obj['xmin']))/cell_w
+                relatice_h = (float(obj["ymax"]) - float(obj['ymin']))/cell_h
+                annotation_dims.append(map(float, (relative_w,relatice_h)))
     annotation_dims = np.array(annotation_dims)
 
     centroids = run_kmeans(annotation_dims, num_anchors)
@@ -131,6 +139,13 @@ def main(argv):
     # write anchors to file
     print('\naverage IOU for', num_anchors, 'anchors:', '%0.2f' % avg_IOU(annotation_dims, centroids))
     print_anchors(centroids)
+
+    centroids_real_value = np.zeros(centroids.shape)
+    centroids_real_value[:,0] = centroids[:,0] * cell_w
+    centroids_real_value[:,1] = centroids[:,1] * cell_h
+
+    print('Real value:')
+    print_anchors(centroids_real_value)
 
 if __name__ == '__main__':
     args = argparser.parse_args()
